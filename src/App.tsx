@@ -1,33 +1,11 @@
-import { useState } from 'react'
-
+import { useState,useRef } from 'react'
+import emailjs from '@emailjs/browser';
 import './App.css'
 
 
-import { Resend } from 'resend';
-
-const resend = new Resend('re_cpREbhPB_2wYLFXZhGpj4xRNp3P81F68G');
-
-interface EmailData {
-    from: string;
-    to: string[]; 
-    subject: string;
-    html: string;
-  }
-
-// eslint-disable-next-line react-refresh/only-export-components
-export const sendEmail = async (emailData: EmailData) => {
-  
-    const { data, error } = await resend.emails.send(emailData);
-  
-    if (error) {
-      throw new Error(`Error al enviar el correo: ${error}`);
-    }
-  
-    return data;
-  };
-  
-
   const App: React.FC = () => {
+    const form = useRef<HTMLFormElement>(null); // Define el tipo de ref
+
     const [formData, setFormData] = useState({
       fullName: '',
       email: '',
@@ -45,34 +23,35 @@ export const sendEmail = async (emailData: EmailData) => {
     const handleSubmit = async (e: React.FormEvent) => {
       e.preventDefault();
   
-      try {
-        await sendEmail({
-          from: 'Acme <onboarding@resend.dev>',
-          to: [formData.email, 'josea_1998@hotmail.com'],
-          subject: 'Correo de prueba de llegada',
-          html: `<p>Nombre: ${formData.fullName}</p>
-                 <p>Correo: ${formData.email}</p>
-                 <p>Celular: ${formData.phone}</p>
-                 <p>Mensaje: ${formData.message}</p>`,
-        });
-  
-        // Continúa con tu lógica de éxito, por ejemplo, mostrar un mensaje de confirmación
-        alert('Correo enviado correctamente');
-        setFormData({
-          fullName: '',
-          email: '',
-          phone: '',
-          message: '',
-        });
-      } catch (error) {
-        console.error('Error al enviar el correo', error);
+      if (form.current) { // Comprueba si la ref tiene valor
+        try {
+          await emailjs.sendForm('service_nilgym8', 'template_a9h1avh', form.current, 'ugvzJY-afjBrGZYIp')
+            .then((result) => {
+              console.log(result.text);
+              // Lógica de éxito
+              alert('Correo enviado correctamente');
+              setFormData({
+                fullName: '',
+                email: '',
+                phone: '',
+                message: '',
+              });
+            })
+            .catch((error) => {
+              console.error('Error al enviar el correo', error);
+            });
+        } catch (error) {
+          console.error('Error interno', error);
+        }
+      } else {
+        console.error('La ref del formulario aún no tiene valor');
       }
     };
   
     return (
       <div>
         <h1>Formulario de Contacto</h1>
-        <form onSubmit={handleSubmit}>
+        <form ref={form} onSubmit={handleSubmit}>
           <label>
             Nombre:
             <input
@@ -121,5 +100,4 @@ export const sendEmail = async (emailData: EmailData) => {
       </div>
     );
   };
-  
   export default App;
